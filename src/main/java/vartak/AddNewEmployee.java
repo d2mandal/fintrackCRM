@@ -7,6 +7,7 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.File;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -17,6 +18,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -28,38 +30,38 @@ import javax.swing.SwingUtilities;
 import com.toedter.calendar.JDateChooser;
 
 class AddNewEmployee extends JPanel {
+
     private Connection conn;
-    private JTextField firstNameText, middleNameText, lastNameText, addressText,  pincodeText, mobText, emailText,ageText;
-    private JDateChooser dateChooser;
-    private JLabel  imageLabel,stateSelected;
+    private JTextField firstNameText, middleNameText, lastNameText, addressText, pincodeText, mobText, emailText, ageText;
+    private JDateChooser dateChooserAge, dateChooserJoining;
+    private JLabel imageLabel, stateSelected, DateOfJoining;
     private JRadioButton male, female, other;
     private JButton submitBtn, backBtn, uploadButton;
     private String imagePath = "";
-    private JComboBox<String> stateCombo;
+    private JComboBox<String> stateCombo, departmentComboBox;
 
-    public AddNewEmployee(JPanel mainContentPanel, CardLayout cardLayout) {
+    public AddNewEmployee() {
         setLayout(null);
         setBackground(new Color(255, 255, 204));
-       SwingUtilities.invokeLater(() -> {
-           initComponents();
-           addComponents();
-       });
+    
+            initComponents();
+            addComponents();
         
-    }
 
-   
+    }
 
     private void initComponents() {
         firstNameText = createTextField();
         middleNameText = createTextField();
         lastNameText = createTextField();
-        ageText=createTextField();
+        ageText = createTextField();
         addressText = createTextField();
         //stateText = createTextField();
         pincodeText = createTextField();
         mobText = createTextField();
         emailText = createTextField();
-        dateChooser = new JDateChooser();
+        dateChooserAge = new JDateChooser();
+        dateChooserJoining = new JDateChooser();
         //ageResult = new JLabel();
         imageLabel = new JLabel("No Image Selected", SwingConstants.CENTER);
         imageLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
@@ -76,38 +78,18 @@ class AddNewEmployee extends JPanel {
         backBtn = new JButton("Back");
         uploadButton = new JButton("Upload Image");
 
-        String[] states = {"","Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"};
+        String[] states = {"", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"};
         stateCombo = new JComboBox<>(states);
-        
-      
 
-    dateChooser.getDateEditor().addPropertyChangeListener(e -> {
-    if ("date".equals(e.getPropertyName())) {
-        java.util.Date date = dateChooser.getDate();
-        if (date == null) {  // Check for null before using date.getTime()
-            ageText.setText(""); // Clear age field if no date is selected
-            return;
-        }
-        long diff = new java.util.Date().getTime() - date.getTime();
-        long diffYears = diff / (365L * 24 * 60 * 60 * 1000);
-        ageText.setText(String.valueOf(diffYears));
-        // ageText.setText(String.valueOf(diffYears));
+        submitBtn.addActionListener(e -> insertEmployeeData());
+        uploadButton.addActionListener(e -> uploadImage());
     }
-});
-
-   
-   
-    submitBtn.addActionListener(e -> insertEmployeeData());
-    uploadButton.addActionListener(e -> uploadImage());
-}
 
     private JTextField createTextField() {
         JTextField textField = new JTextField();
         textField.setBorder(BorderFactory.createLineBorder(Color.RED, 1));
         return textField;
     }
-
-   
 
     private void addComponents() {
         addLabel("First Name*:", 20, 20, 100, 25);
@@ -120,9 +102,25 @@ class AddNewEmployee extends JPanel {
         addTextField(lastNameText, 140, 100, 200, 25);
 
         addLabel("Date Of Birth*:", 20, 140, 100, 25);
-        dateChooser.setBounds(140, 140, 150, 25);
-        add(dateChooser);
+        dateChooserAge.setBounds(140, 140, 150, 25);
+        add(dateChooserAge);
 
+        dateChooserAge.getDateEditor().addPropertyChangeListener(e -> {
+            if ("date".equals(e.getPropertyName())) {
+                java.util.Date date = dateChooserAge.getDate();
+                if (date == null) {
+                    ageText.setText(""); // Clear age field if no date is selected
+                    return;
+                }
+
+                // Calculate age
+                long diff = System.currentTimeMillis() - date.getTime();
+                long diffYears = diff / (365L * 24 * 60 * 60 * 1000);
+
+                ageText.setText(String.valueOf(diffYears)); // Display age
+            }
+        });
+        
         addLabel("Age:", 20, 180, 100, 25);
         addTextField(ageText, 140, 180, 100, 25);
 
@@ -140,7 +138,6 @@ class AddNewEmployee extends JPanel {
         stateSelected.setBounds(340, 300, 200, 25);
         add(stateSelected);
         stateCombo.addActionListener(e -> stateSelected.setText(stateCombo.getSelectedItem().toString()));
-        
 
         addLabel("Pincode*:", 20, 340, 100, 25);
         addTextField(pincodeText, 140, 340, 150, 25);
@@ -154,7 +151,6 @@ class AddNewEmployee extends JPanel {
                 }
             }
         });
-        
 
         addLabel("Mobile Number*:", 20, 380, 100, 25);
         addTextField(mobText, 140, 380, 200, 25);
@@ -168,10 +164,32 @@ class AddNewEmployee extends JPanel {
         backBtn.setBounds(20, 500, 100, 30);
         add(backBtn);
 
-        imageLabel.setBounds(400, 20, 160, 150);
+        imageLabel.setBounds(450, 20, 160, 150);
         add(imageLabel);
 
-        uploadButton.setBounds(400, 180, 150, 30);
+        addLabel("Date of Joining*:", 450, 220, 100, 25);
+
+        dateChooserJoining = new JDateChooser();
+        dateChooserJoining.setBounds(550, 220, 100, 25);
+        dateChooserJoining.setDate(new java.util.Date());
+        //dateChooser.setEnabled(false);
+        add(dateChooserJoining);
+
+        addLabel("Department*:", 450, 260, 100, 25);
+        String[] departments = {
+            "", "Accounting", "Administration", "Audit", "Business Development",
+            "Customer Service", "Engineering", "Finance", "Human Resources (HR)",
+            "Information Technology (IT)", "Legal", "Logistics", "Marketing",
+            "Operations", "Procurement", "Production", "Public Relations",
+            "Quality Assurance", "Research & Development (R&D)", "Risk Management",
+            "Sales", "Security", "Supply Chain", "Training & Development"
+        };
+
+        departmentComboBox = new JComboBox<>(departments);
+        departmentComboBox.setBounds(550, 260, 200, 25);
+        add(departmentComboBox);
+
+        uploadButton.setBounds(470, 180, 120, 30);
         add(uploadButton);
     }
 
@@ -216,47 +234,45 @@ class AddNewEmployee extends JPanel {
             JOptionPane.showMessageDialog(this, "Please fill in all required fields!", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        if (dateChooser.getDate() == null) {  // Check null before processing
+        if (dateChooserAge.getDate() == null) {  // Check null before processing
             JOptionPane.showMessageDialog(this, "Please select a date of birth!", "Validation Error", JOptionPane.ERROR_MESSAGE);
             ageText.setText(""); // Clear the age field if no date is selected
             return;
         }
-    
-       
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/fintrackdbs", "root", "1234");
-             PreparedStatement pstmt = conn.prepareStatement(
-                     "INSERT INTO addEmployee (firstname, middlename, lastname, dob, age, gender, address, state, pincode,  mob, mail,image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?,?,?)")) {
-    
+
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/fintrackdbs", "root", "1234"); PreparedStatement pstmt = conn.prepareStatement(
+                "INSERT INTO addEmployee (firstname, middlename, lastname, dob, age, gender, address, state, pincode,  mob, mail,image_path,dateOfJoining,Department) VALUES (?,?,?, ?, ?, ?, ?, ?, ?, ?,?, ?,?,?)")) {
+
             pstmt.setString(1, firstNameText.getText());
             pstmt.setString(2, middleNameText.getText());
             pstmt.setString(3, lastNameText.getText());
-            pstmt.setDate(4, new java.sql.Date(dateChooser.getDate().getTime()));
+            pstmt.setDate(4, new java.sql.Date(dateChooserAge.getDate().getTime()));
             // pstmt.setString(5, ageText.getText());
             pstmt.setInt(5, Integer.parseInt(ageText.getText().trim()));
             pstmt.setString(6, male.isSelected() ? "M" : (female.isSelected() ? "F" : "O"));
             pstmt.setString(7, addressText.getText());
             pstmt.setString(8, stateCombo.getSelectedItem().toString());
-            pstmt.setString(9, pincodeText.getText());
+            pstmt.setString(9, pincodeText.getText()); 
             pstmt.setString(10, mobText.getText());
             pstmt.setString(11, emailText.getText());
             pstmt.setString(12, imagePath);
-    
+            pstmt.setString(13, new Date(dateChooserJoining.getDate().getTime()).toString());
+            pstmt.setString(14, departmentComboBox.getSelectedItem().toString());
+
             int rowsInserted = pstmt.executeUpdate();
             if (rowsInserted > 0) {
                 JOptionPane.showMessageDialog(this, "Employee added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                
-                
+
                 clearFields(); // Clear fields after successful entry
             } else {
                 JOptionPane.showMessageDialog(this, "Failed to add employee. Try again!", "Error", JOptionPane.ERROR_MESSAGE);
             }
-    
+
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
 
     private void clearFields() {
         firstNameText.setText("");
@@ -267,9 +283,9 @@ class AddNewEmployee extends JPanel {
         pincodeText.setText("");
         mobText.setText("");
         emailText.setText("");
-      
-        if (dateChooser != null) {
-            dateChooser.setDate(null);
+
+        if (dateChooserAge != null) {
+            dateChooserAge.setDate(null);
         }
         male.setSelected(false);
         female.setSelected(false);
@@ -277,24 +293,46 @@ class AddNewEmployee extends JPanel {
         stateCombo.setSelectedIndex(0); // Reset state combo box
         imageLabel.setText("No Image Selected"); // Reset image label
         imageLabel.setIcon(null); // Reset the image icon
+        imagePath = ""; // Reset the image path
+        if (dateChooserJoining != null) {
+            dateChooserJoining.setDate(new java.util.Date());
+        }
+        departmentComboBox.setSelectedIndex(0);
 
-       
     }
-    
 
+    // private boolean validateFields() {
+    //     return !firstNameText.getText().trim().isEmpty()
+    //             && !lastNameText.getText().trim().isEmpty()
+    //             && dateChooserAge.getDate() != null
+    //             && (male.isSelected() || female.isSelected() || other.isSelected())
+    //             && !addressText.getText().trim().isEmpty()
+    //             && !mobText.getText().trim().isEmpty()
+    //             && !emailText.getText().trim().isEmpty()
+    //             && !pincodeText.getText().trim().isEmpty()
+    //             && !imagePath.isEmpty()
+    //             && stateCombo.getSelectedIndex() > 0
+    //             && dateChooserJoining.getDate() != null
+    //             && departmentComboBox.getSelectedIndex() > 0;
+    // }
     private boolean validateFields() {
-        return !firstNameText.getText().trim().isEmpty() &&
-               !lastNameText.getText().trim().isEmpty() &&
-               dateChooser.getDate() != null &&
-               (male.isSelected() || female.isSelected() || other.isSelected()) &&
-               !addressText.getText().trim().isEmpty() &&
-               !mobText.getText().trim().isEmpty() &&
-               !emailText.getText().trim().isEmpty();
+        if (firstNameText.getText().trim().isEmpty()) return false;
+        if (lastNameText.getText().trim().isEmpty()) return false;
+        if (dateChooserAge.getDate() == null) return false;
+        if (ageText.getText().trim().isEmpty()) return false;
+        if (!male.isSelected() && !female.isSelected() && !other.isSelected()) return false;
+        if (addressText.getText().trim().isEmpty()) return false;
+        if (stateCombo.getSelectedIndex() == 0) return false;
+        if (!pincodeText.getText().matches("\\d{6}")) return false;
+        if (mobText.getText().trim().isEmpty()) return false;
+        if (emailText.getText().trim().isEmpty()) return false;
+        if (dateChooserJoining.getDate() == null) return false;
+        if (departmentComboBox.getSelectedIndex() == 0) return false;
+    
+        return true;
     }
 
-     public JPanel getPanel() {
-         return this;
-     }
+    public JPanel getPanel() {
+        return this;
+    }
 }
-
-
